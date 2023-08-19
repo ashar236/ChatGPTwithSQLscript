@@ -383,7 +383,7 @@ def main(template_option):
                 print(ground_truth_sql_result)
 
                 # Validate the ChatGPT generated SQL script
-                is_correct, similarity_scores, validation_error = validation(sql_result, ground_truth_sql_result)
+                global_accuracy,is_correct, similarity_scores, validation_error = validation(sql_result, ground_truth_sql_result)
                 all_similarity_scores.append(similarity_scores)
                 print(is_correct)
 
