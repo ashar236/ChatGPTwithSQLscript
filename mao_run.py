@@ -146,12 +146,15 @@ def numerical_similarity(value1, value2, threshold=1e-10):
 
 def validation(sql_result, ground_truth, tolerance=1e-10):
     validation_error = ""
+
     if len(sql_result) != len(ground_truth) or len(sql_result[0]) != len(ground_truth[0]):
         validation_error = "Different number of rows or columns in the results and ground truth."
-        return False, ["mismatch"], validation_error
+        return False, [], validation_error
 
     # Initialize a list to store similarity scores
     similarity_scores = []
+    fully_matched_columns = 0  # Counter for columns that matched perfectly
+
     res = True
     # Iterate through columns and compare
     for col_index in range(len(sql_result[0])):
@@ -166,19 +169,24 @@ def validation(sql_result, ground_truth, tolerance=1e-10):
         except ValueError:
             similarity_type = "jaccard"
 
-        similarity_score = calculate_similarity(sql_column, truth_column, similarity_type=similarity_type, threshold=tolerance)
+        similarity_score = calculate_similarity(sql_column, truth_column, similarity_type=similarity_type,
+                                                threshold=tolerance)
 
-        if similarity_score < 1:
-            validation_error = f"the {col_index}-th column does not match"
+        if similarity_score == 1:
+            fully_matched_columns += 1
+        elif similarity_score < 1:
+            validation_error += f"the {col_index}-th column does not match; "
             res = False
 
         # Append the similarity score for this column
         similarity_scores.append(similarity_score)
 
+    global_accuracy = fully_matched_columns / len(sql_result[0])
     print("Similarity scores for this iteration:", similarity_scores)
+    print(f"Global accuracy: {global_accuracy:.2f} ({fully_matched_columns}/{len(sql_result[0])} matched columns)")
 
-    # Returning both the result of strict validation and the similarity scores
-    return res, similarity_scores, validation_error
+    # Returning both the result of strict validation, the similarity scores, and the global accuracy
+    return global_accuracy,res, similarity_scores, validation_error
 
 def generate_prompt(json_file_path, template_option, source_data_name_to_find):
     # Read the JSON file
@@ -341,6 +349,8 @@ def main(template_option):
                             if iteration_scores[0] == "mismatch":
                                 file.write("# of rows in result and ground truth ")
                             file.write(", ".join(map(str, iteration_scores)) + "\n")
+                        # Append the global accuracy to the end
+                        file.write(f", Global accuracy: {global_accuracy:.2f}\n")
                     all_similarity_scores = []
                     break
 
