@@ -136,6 +136,12 @@ def numerical_similarity(value1, value2, threshold=1e-10):
     Returns 1.0 if the difference is below the threshold, 0.0 otherwise.
     """
     try:
+        if value1 is None and value2 is None:
+            return 1.0
+        if value1 is None and value2 == 0:
+            return 1.0
+        if value2 is None and value1 == 0:
+            return 1.0
         diff = abs(float(value1) - float(value2))
         if diff <= threshold:
             return 1.0
@@ -149,7 +155,7 @@ def validation(sql_result, ground_truth, tolerance=1e-10):
 
     if len(sql_result) != len(ground_truth) or len(sql_result[0]) != len(ground_truth[0]):
         validation_error = "Different number of rows or columns in the results and ground truth."
-        return False, [], validation_error
+        return 0.0, False, [], validation_error
 
     # Initialize a list to store similarity scores
     similarity_scores = []
